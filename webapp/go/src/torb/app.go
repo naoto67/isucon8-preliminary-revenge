@@ -454,25 +454,10 @@ func main() {
 		}
 
 		var totalPrice int
-		// var sheet_id int
-		// if rows, err := db.QueryRow("SELECT IFNULL(e.price, 0), sheet_id FROM reservations r INNER JOIN events e ON e.id = r.event_id WHE    RE r.user_id = ? AND r.canceled_at IS NULL"); err != nil {
-		// 	return err
-		// }
-		// if err := db.QueryRow("SELECT IFNULL(sum(e.price), 0), sheet_id FROM reservations r INNER JOIN events e ON e.id = r.event_id WHERE r.user_id = ? AND r.canceled_at IS NULL", user.ID).Scan(&totalPrice, &sheet_id); err != nil {
+
 		if err := db.QueryRow("SELECT IFNULL(SUM(e.price + s.price), 0) FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id INNER JOIN events e ON e.id = r.event_id WHERE r.user_id = ? AND r.canceled_at IS NULL", user.ID).Scan(&totalPrice); err != nil {
 			return err
 		}
-
-		//		switch {
-		//		case sheet_id >= 1 && sheet_id <= 50:
-		//			totalprice = totalprice + 5000
-		//		case sheet_id >= 51 && sheet_id <= 200:
-		//			totalprice = totalprice + 3000
-		//		case sheet_id >= 201 && sheet_id <= 500:
-		//			totalprice = totalprice + 1000
-		//			//	case sheet_id >= 501 && sheet_id <= 1000:
-		//			//		id = id + 500
-		//		}
 
 		rows, err = db.Query("SELECT event_id FROM reservations WHERE user_id = ? GROUP BY event_id ORDER BY MAX(IFNULL(canceled_at, reserved_at)) DESC LIMIT 5", user.ID)
 		if err != nil {
@@ -480,7 +465,8 @@ func main() {
 		}
 		defer rows.Close()
 
-		var recentEvents []*Event
+		recentEvents := make([]*Event, 5)
+		i := 0
 		for rows.Next() {
 			var eventID int64
 			if err := rows.Scan(&eventID); err != nil {
@@ -493,7 +479,8 @@ func main() {
 			for k := range event.Sheets {
 				event.Sheets[k].Detail = nil
 			}
-			recentEvents = append(recentEvents, event)
+			recentEvents[i] = event
+			i = i + 1
 		}
 		if recentEvents == nil {
 			recentEvents = make([]*Event, 0)
