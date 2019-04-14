@@ -650,7 +650,6 @@ func main() {
 		}
 		rank := c.Param("rank")
 		num := c.Param("num")
-
 		user, err := getLoginUser(c)
 		if err != nil {
 			return err
@@ -675,6 +674,7 @@ func main() {
 		id := getIdByRankAndNum(rank, num)
 		if id < 0 {
 			return resError(c, "invalid_sheet", 404)
+			return errors.New("no columns in sheets table")
 		}
 		//	if err := db.QueryRow("SELECT * FROM sheets WHERE `rank` = ? AND num = ?", rank, num).Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
 		//		if err == sql.ErrNoRows {
