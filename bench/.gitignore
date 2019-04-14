@@ -1,4 +1,4 @@
-bin
 pkg
 vendor
+*.json
 cache/*.gob
