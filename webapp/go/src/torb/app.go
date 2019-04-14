@@ -981,21 +981,21 @@ func getIdByRankAndNum(rank string, id string) (int, bool) {
 	}
 	switch rank {
 	case "S":
-		if num >= 1 && num <= 50 {
+		if num < 1 && num > 50 {
 			return 0, false
 		}
 	case "A":
-		if num >= 51 && num <= 200 {
+		if num < 51 && num > 200 {
 			return 0, false
 		}
 		num = num + 50
 	case "B":
-		if num >= 201 && num <= 500 {
+		if num < 201 && num > 500 {
 			return 0, false
 		}
 		num = num + 200
 	case "C":
-		if num >= 501 && num <= 1000 {
+		if num < 501 && num > 1000 {
 			return 0, false
 		}
 		num = num + 500
