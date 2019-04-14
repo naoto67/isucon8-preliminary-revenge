@@ -422,7 +422,7 @@ func main() {
 		}
 		defer rows.Close()
 
-		recentReservations = make([]Reservation, 5)
+		recentReservations := make([]Reservation, 5)
 		i := 0
 		for rows.Next() {
 			var reservation Reservation
@@ -468,7 +468,7 @@ func main() {
 		defer rows.Close()
 
 		recentEvents := make([]*Event, 5)
-		i := 0
+		i = 0
 		for rows.Next() {
 			var eventID int64
 			if err := rows.Scan(&eventID); err != nil {
