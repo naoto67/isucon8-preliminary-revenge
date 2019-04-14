@@ -422,8 +422,9 @@ func main() {
 		}
 		defer rows.Close()
 
-		recentReservations := make([]Reservation, 5)
-		i := 0
+		// recentReservations := make([]Reservation, 5)
+		// i := 0
+		var recentReservations []Reservation
 		for rows.Next() {
 			var reservation Reservation
 			var sheet Sheet
@@ -448,8 +449,9 @@ func main() {
 			if reservation.CanceledAt != nil {
 				reservation.CanceledAtUnix = reservation.CanceledAt.Unix()
 			}
-			recentReservations[i] = reservation
-			i = i + 1
+			recentReservations = append(recentReservations, reservation)
+			//		recentReservations[i] = reservation
+			//		i = i + 1
 		}
 		if recentReservations == nil {
 			recentReservations = make([]Reservation, 0)
