@@ -671,8 +671,9 @@ func main() {
 		}
 
 		// var sheet Sheet
-		id, flag := getIdByRankAndNum(rank, num)
-		if !flag {
+		// rank: S, num: 68
+		id := getIdByRankAndNum(rank, num)
+		if id < 0 {
 			return resError(c, "invalid_sheet", 404)
 		}
 		//	if err := db.QueryRow("SELECT * FROM sheets WHERE `rank` = ? AND num = ?", rank, num).Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
@@ -974,31 +975,28 @@ func resError(c echo.Context, e string, status int) error {
 	return c.JSON(status, map[string]string{"error": e})
 }
 
-func getIdByRankAndNum(rank string, id string) (int, bool) {
+func getIdByRankAndNum(rank string, id string) int {
 	num, err := strconv.Atoi(id)
 	if err != nil {
-		return 0, false
+		return -1
 	}
 	switch rank {
 	case "S":
-		if num < 1 || num > 50 {
-			return 0, false
+		if 0 < num && num <= 50 {
+			return num
 		}
 	case "A":
-		if num < 1 || num > 150 {
-			return 0, false
+		if 0 < num && num <= 150 {
+			return num + 50
 		}
-		num = num + 50
 	case "B":
-		if num < 1 || num > 300 {
-			return 0, false
+		if 0 < num && num <= 300 {
+			return num + 200
 		}
-		num = num + 200
 	case "C":
-		if num < 1 || num > 500 {
-			return 0, false
+		if 0 < num && num <= 500 {
+			return num + 500
 		}
-		num = num + 500
 	}
-	return num, true
+	return -1
 }
