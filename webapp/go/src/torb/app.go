@@ -295,11 +295,11 @@ func fillinAdministrator(next echo.HandlerFunc) echo.HandlerFunc {
 
 func validateRank(rank string) bool {
 	//var count int
-	switch rank {
-	case "A", "B", "C", "S":
+	if rank == "A" || rank == "B" || rank == "C" || rank == "S" {
 		return true
+	} else {
+		return false
 	}
-	return false
 	//	db.QueryRow("SELECT COUNT(*) FROM sheets WHERE `rank` = ?", rank).Scan(&count)
 	//	return count > 0
 }
