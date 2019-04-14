@@ -198,8 +198,8 @@ func getEvents(all bool) ([]*Event, error) {
 	defer rows.Close()
 
 	var events []*Event
-	var event Event
 	for rows.Next() {
+		var event Event
 		if err := rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
 			return nil, err
 		}
@@ -423,9 +423,9 @@ func main() {
 		defer rows.Close()
 
 		var recentReservations []Reservation
-		var reservation Reservation
-		var sheet Sheet
 		for rows.Next() {
+			var reservation Reservation
+			var sheet Sheet
 			if err := rows.Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt, &sheet.Rank, &sheet.Num); err != nil {
 				return err
 			}
