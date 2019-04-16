@@ -40,5 +40,5 @@ CREATE TABLE IF NOT EXISTS administrators (
     UNIQUE KEY login_name_uniq (login_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-alter table reservations add index index_on_reserved_at_canceled_at(canceled_at, reserved_at)
-alter table reservations add index index_on_user_id(user_id)
+alter table reservations add index index_on_reserved_at_canceled_at(canceled_at, reserved_at);
+alter table reservations add index index_on_user_id(user_id);
