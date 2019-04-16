@@ -156,35 +156,69 @@ func getEventAlreadyHavingEvent(event *Event, loginUserID int64) error {
 		"C": &Sheets{},
 	}
 
-	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
+	event.Total = 1000
+	// 各座席の予約を求める
+	rows, err := db.Query("select s.rank, count(*) from reservations inner join sheets s on s.id = sheet_id where event_id = ? and canceled_at is null group by s.rank", event.ID)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	defer rows.Close()
+	var reserved_total int
+	for rows.Next() {
+		var rank string
+		var count int
+		if err = rows.Scan(&rank, &count); err != nil {
+			return err
+		}
+		event.Sheets[rank].Remains = count
+	}
+
+	arr := []string{"S", "A", "B", "C"}
+	for _, v := range arr {
+		sheet, i := getSheetsInfo(v, "1")
+		if i < 0 {
+			return errors.New("non range")
+		}
+		event.Sheets[v].Price = sheet.Price + event.Price
+		event.Sheets[v].Total = sheet.Total
+		event.Sheets[v].Remains = sheet.Total - event.Sheets[v].Remains
+	}
+	event.Remains = 1000 - reserved_total
+
+	// reserved sheetだけを取る
+	rows, err = db.Query("select sheet_id, user_id, reserved_at from reservations where event_id = ?", event.ID)
+	if err != nil {
+		return nil, err
 	}
 	defer rows.Close()
 
+	reservedSheets := map[int64]TempStruct{}
 	for rows.Next() {
-		var sheet Sheet
-		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-			return err
-		}
-		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
-		event.Total++
-		event.Sheets[sheet.Rank].Total++
-
-		var reservation Reservation
-		err := db.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
-		if err == nil {
-			sheet.Mine = reservation.UserID == loginUserID
+		var temp TempStruct
+		rows.Scan(&temp.SheetID, &temp.UserID, &temp.ReservedAt)
+		reservedSheets[temp.SheetID] = temp
+	}
+	var i int64
+	for i = 1; i <= 1000; i++ {
+		if _, ok := reservedSheets[i]; ok {
+			sheet, e := getSheetByID(i)
+			if e < 0 {
+				return errors.New("non range")
+			}
+			if reservedSheets[i].UserID == loginUserID {
+				sheet.Mine = true
+			}
+			sheet.ReservedAt = reservedSheets[i].ReservedAt
 			sheet.Reserved = true
-			sheet.ReservedAtUnix = reservation.ReservedAt.Unix()
-		} else if err == sql.ErrNoRows {
-			event.Remains++
-			event.Sheets[sheet.Rank].Remains++
+			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 		} else {
-			return err
+			sheet, e := getSheetByID(i)
+			if e < 0 {
+				return errors.New("non range")
+			}
+			sheet.Reserved = false
+			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 		}
-
-		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 	}
 
 	return nil
