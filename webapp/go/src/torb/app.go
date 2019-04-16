@@ -295,11 +295,6 @@ func fillinAdministrator(next echo.HandlerFunc) echo.HandlerFunc {
 
 func validateRank(rank string) bool {
 	var count int
-	//if rank == "A" || rank == "B" || rank == "C" || rank == "S" {
-	//	return true
-	//} else {
-	//	return false
-	//}
 	db.QueryRow("SELECT COUNT(*) FROM sheets WHERE `rank` = ?", rank).Scan(&count)
 	return count > 0
 }
@@ -420,15 +415,13 @@ func main() {
 			return resError(c, "forbidden", 403)
 		}
 
-		// 	rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
+		// rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
 		rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
 		if err != nil {
 			return err
 		}
 		defer rows.Close()
 
-		// recentReservations := make([]Reservation, 5)
-		// i := 0
 		var recentReservations []Reservation
 		for rows.Next() {
 			var reservation Reservation
@@ -455,27 +448,39 @@ func main() {
 				reservation.CanceledAtUnix = reservation.CanceledAt.Unix()
 			}
 			recentReservations = append(recentReservations, reservation)
-			//		recentReservations[i] = reservation
-			//		i = i + 1
 		}
 		if recentReservations == nil {
 			recentReservations = make([]Reservation, 0)
 		}
 
 		var totalPrice int
-
+		// var sheet_id int
+		// if rows, err := db.QueryRow("SELECT IFNULL(e.price, 0), sheet_id FROM reservations r INNER JOIN events e ON e.id = r.event_id WHE    RE r.user_id = ? AND r.canceled_at IS NULL"); err != nil {
+		// 	return err
+		// }
+		// if err := db.QueryRow("SELECT IFNULL(sum(e.price), 0), sheet_id FROM reservations r INNER JOIN events e ON e.id = r.event_id WHERE r.user_id = ? AND r.canceled_at IS NULL", user.ID).Scan(&totalPrice, &sheet_id); err != nil {
 		if err := db.QueryRow("SELECT IFNULL(SUM(e.price + s.price), 0) FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id INNER JOIN events e ON e.id = r.event_id WHERE r.user_id = ? AND r.canceled_at IS NULL", user.ID).Scan(&totalPrice); err != nil {
 			return err
 		}
 
-		rows, err = db.Query("SELECT event_id FROM reservations WHERE user_id = ? ORDER BY IFNULL(canceled_at, reserved_at) DESC LIMIT 5", user.ID)
+		//		switch {
+		//		case sheet_id >= 1 && sheet_id <= 50:
+		//			totalprice = totalprice + 5000
+		//		case sheet_id >= 51 && sheet_id <= 200:
+		//			totalprice = totalprice + 3000
+		//		case sheet_id >= 201 && sheet_id <= 500:
+		//			totalprice = totalprice + 1000
+		//			//	case sheet_id >= 501 && sheet_id <= 1000:
+		//			//		id = id + 500
+		//		}
+
+		rows, err = db.Query("SELECT event_id FROM reservations WHERE user_id = ? GROUP BY event_id ORDER BY MAX(IFNULL(canceled_at, reserved_at)) DESC LIMIT 5", user.ID)
 		if err != nil {
 			return err
 		}
 		defer rows.Close()
 
-		recentEvents := make([]*Event, 5)
-		i := 0
+		var recentEvents []*Event
 		for rows.Next() {
 			var eventID int64
 			if err := rows.Scan(&eventID); err != nil {
@@ -488,8 +493,7 @@ func main() {
 			for k := range event.Sheets {
 				event.Sheets[k].Detail = nil
 			}
-			recentEvents[i] = event
-			i = i + 1
+			recentEvents = append(recentEvents, event)
 		}
 		if recentEvents == nil {
 			recentEvents = make([]*Event, 0)
@@ -602,7 +606,6 @@ func main() {
 		var reservationID int64
 		for {
 			if err := db.QueryRow("SELECT * FROM sheets WHERE id NOT IN (SELECT sheet_id FROM reservations WHERE event_id = ? AND canceled_at IS NULL FOR UPDATE) AND `rank` = ? ORDER BY RAND() LIMIT 1", event.ID, params.Rank).Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-				// if err := db.QueryRow("SELECT id, num FROM sheets WHERE id NOT IN (SELECT sheet_id FROM reservations WHERE event_id = ? AND canceled_at IS NULL FOR UPDATE) AND `rank` = ? ORDER BY RAND() LIMIT 1", event.ID, params.Rank).Scan(&sheet.ID, &sheet.Num); err != nil {
 				if err == sql.ErrNoRows {
 					return resError(c, "sold_out", 409)
 				}
@@ -996,5 +999,4 @@ func getIdByRankAndNum(rank string, id string) int {
 		}
 	}
 	return -1
-
 }
