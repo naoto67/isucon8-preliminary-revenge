@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"errors"
 	"strconv"
 
@@ -160,7 +159,7 @@ func getEventAlreadyHavingEvent(event *Event, loginUserID int64) error {
 	// 各座席の予約を求める
 	rows, err := db.Query("select s.rank, count(*) from reservations inner join sheets s on s.id = sheet_id where event_id = ? and canceled_at is null group by s.rank", event.ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 	var reserved_total int
@@ -188,7 +187,7 @@ func getEventAlreadyHavingEvent(event *Event, loginUserID int64) error {
 	// reserved sheetだけを取る
 	rows, err = db.Query("select sheet_id, user_id, reserved_at from reservations where event_id = ?", event.ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer rows.Close()
 
