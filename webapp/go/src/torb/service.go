@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"strconv"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -202,35 +203,67 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		"C": &Sheets{},
 	}
 
-	rows, err := db.Query("SELECT * FROM sheets ORDER BY `rank`, num")
+	event.Total = 1000
+	// 各座席の予約を求める
+	rows, err := db.Query("select s.rank, count(*) from reservations inner join sheets s on s.id = sheet_id where event_id = ? and canceled_at is null group by s.rank", event.ID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	var reserved_total int
+	for rows.Next() {
+		var rank string
+		var count int
+		if err = rows.Scan(&rank, &count); err != nil {
+			return nil, err
+		}
+		sheet, i := getSheetsInfo(rank, "1")
+		if i < 0 {
+			return nil, errors.New("error")
+		}
+		event.Sheets[rank].Price = sheet.Price + event.Price
+		event.Sheets[rank].Total = sheet.Total
+		event.Sheets[rank].Remains = count
+		reserved_total = reserved_total + count
+	}
+	event.Remains = 1000 - reserved_total
 
+	// reserved sheetだけを取る
+	rows, err = db.Query("select sheet_id, user_id, reserved_at from reservations where event_id = ?", event.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var reservedSheetIDs []int64
 	for rows.Next() {
 		var sheet Sheet
-		if err := rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
-			return nil, err
+		var sheetID int64
+		var userID int64
+		var reservedAt *time.Time
+		rows.Scan(&sheetID, &userID, &reservedAt)
+		sheet, i := getSheetByID(sheetID)
+		if i < 0 {
+			return nil, errors.New("error")
 		}
-		event.Sheets[sheet.Rank].Price = event.Price + sheet.Price
-		event.Total++
-		event.Sheets[sheet.Rank].Total++
-
-		var reservation Reservation
-		err := db.QueryRow("SELECT * FROM reservations WHERE event_id = ? AND sheet_id = ? AND canceled_at IS NULL GROUP BY event_id, sheet_id HAVING reserved_at = MIN(reserved_at)", event.ID, sheet.ID).Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt)
-		if err == nil {
-			sheet.Mine = reservation.UserID == loginUserID
-			sheet.Reserved = true
-			sheet.ReservedAtUnix = reservation.ReservedAt.Unix()
-		} else if err == sql.ErrNoRows {
-			event.Remains++
-			event.Sheets[sheet.Rank].Remains++
-		} else {
-			return nil, err
+		reservedSheetIDs = append(reservedSheetIDs, sheet.ID)
+		if userID == loginUserID {
+			sheet.Mine = true
 		}
-
+		sheet.ReservedAt = reservedAt
+		sheet.Reserved = true
 		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
+	}
+	var i int64
+	for i = 1; i <= 1000; i++ {
+		if contains(reservedSheetIDs, i) {
+			continue
+		} else {
+			sheet, e := getSheetByID(i)
+			if e < 0 {
+				return nil, errors.New("non range")
+			}
+			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
+		}
 	}
 
 	return &event, nil
@@ -298,7 +331,7 @@ func getIdByRankAndNum(rank string, id string) int {
 }
 
 func getSheetsInfo(rank, num_s string) (Sheet, int) {
-	num, err := strconv.Atoi(num_s)
+	num, err := strconv.ParseInt(num_s, 10, 64)
 	var sheet Sheet
 	if err != nil {
 		return sheet, -1
@@ -309,7 +342,8 @@ func getSheetsInfo(rank, num_s string) (Sheet, int) {
 			sheet.ID = num
 			sheet.Rank = "S"
 			sheet.Price = 5000
-			sheet.num = num
+			sheet.Num = num
+			sheet.Total = 50
 			return sheet, 1
 		}
 	case "A":
@@ -317,7 +351,8 @@ func getSheetsInfo(rank, num_s string) (Sheet, int) {
 			sheet.ID = num + 50
 			sheet.Rank = "A"
 			sheet.Price = 3000
-			sheet.num = num
+			sheet.Num = num
+			sheet.Total = 150
 			return sheet, 1
 		}
 	case "B":
@@ -325,7 +360,8 @@ func getSheetsInfo(rank, num_s string) (Sheet, int) {
 			sheet.ID = num + 200
 			sheet.Rank = "B"
 			sheet.Price = 1000
-			sheet.num = num
+			sheet.Num = num
+			sheet.Total = 300
 			return sheet, 1
 		}
 	case "C":
@@ -333,9 +369,52 @@ func getSheetsInfo(rank, num_s string) (Sheet, int) {
 			sheet.ID = num + 500
 			sheet.Rank = "C"
 			sheet.Price = 0
-			sheet.num = num
+			sheet.Num = num
+			sheet.Total = 500
 			return sheet, 1
 		}
 	}
 	return sheet, -1
+}
+func getSheetByID(id int64) (Sheet, int8) {
+	var sheet Sheet
+	if 1 <= id && id <= 50 {
+		sheet.ID = id
+		sheet.Rank = "S"
+		sheet.Price = 5000
+		sheet.Num = id
+		sheet.Total = 50
+		return sheet, 1
+	} else if 51 <= id && id <= 200 {
+		sheet.ID = id
+		sheet.Rank = "A"
+		sheet.Price = 3000
+		sheet.Num = id - 50
+		sheet.Total = 150
+		return sheet, 1
+	} else if 201 <= id && id <= 500 {
+		sheet.ID = id
+		sheet.Rank = "B"
+		sheet.Price = 1000
+		sheet.Num = id - 200
+		sheet.Total = 300
+		return sheet, 1
+	} else if 501 <= id && id <= 1000 {
+		sheet.ID = id
+		sheet.Rank = "C"
+		sheet.Price = 0
+		sheet.Num = id - 500
+		sheet.Total = 500
+		return sheet, 1
+	}
+	return sheet, -1
+}
+
+func contains(ids []int64, target int64) bool {
+	for _, v := range ids {
+		if v == target {
+			return true
+		}
+	}
+	return false
 }
