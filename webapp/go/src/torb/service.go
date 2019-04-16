@@ -262,6 +262,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 			if e < 0 {
 				return nil, errors.New("non range")
 			}
+			sheet.Reserved = false
 			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 		}
 	}
