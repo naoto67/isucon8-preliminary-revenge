@@ -35,6 +35,7 @@ type Sheet struct {
 	Rank  string `json:"-"`
 	Num   int64  `json:"num"`
 	Price int64  `json:"-"`
+	Total int    `json:"-"`
 
 	Mine           bool       `json:"mine,omitempty"`
 	Reserved       bool       `json:"reserved,omitempty"`
