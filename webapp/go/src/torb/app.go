@@ -140,7 +140,7 @@ func main() {
 		}
 
 		// rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
-		rows, err := db.Query("SELECT r.*, s.rank, e.title, e.public_fg, e.closed_fg, e.price AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id INNER JOIN events e on e.id = r.event_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
+		rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
 		if err != nil {
 			return err
 		}
@@ -149,14 +149,12 @@ func main() {
 		var recentReservations []Reservation
 		for rows.Next() {
 			var reservation Reservation
-			var event Event
 			var sheet Sheet
-			if err := rows.Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt, &sheet.Rank, &sheet.Num, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+			if err := rows.Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt, &sheet.Rank, &sheet.Num); err != nil {
 				return err
 			}
-			event.ID = reservation.EventID
 
-			err = getEventAlreadyHavingEvent(&event, -1)
+			event, err := getEvent(reservation.EventID, -1)
 			if err != nil {
 				return err
 			}
@@ -165,7 +163,7 @@ func main() {
 			event.Total = 0
 			event.Remains = 0
 
-			reservation.Event = &event
+			reservation.Event = event
 			reservation.SheetRank = sheet.Rank
 			reservation.SheetNum = sheet.Num
 			reservation.Price = price
