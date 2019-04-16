@@ -198,7 +198,10 @@ func main() {
 		//			//		id = id + 500
 		//		}
 
-		rows, err = db.Query("SELECT event_id FROM reservations WHERE user_id = ? GROUP BY event_id ORDER BY MAX(IFNULL(canceled_at, reserved_at)) DESC LIMIT 5", user.ID)
+		// event情報をすべて取ってくる
+		rows, err = db.Query("select event_id, e.title, e.public_fg, e.closed_fg, e.price from reservations r inner join events e on e.id = r.event_id  where user_id = ? group by event_id order by max(ifnull(canceled_at, reserved_at)) desc limit 5", user.ID)
+		// 古いクエリ
+		// rows, err = db.Query("SELECT event_id FROM reservations WHERE user_id = ? GROUP BY event_id ORDER BY MAX(IFNULL(canceled_at, reserved_at)) DESC LIMIT 5", user.ID)
 		if err != nil {
 			return err
 		}
@@ -206,18 +209,18 @@ func main() {
 
 		var recentEvents []*Event
 		for rows.Next() {
-			var eventID int64
-			if err := rows.Scan(&eventID); err != nil {
+			var event Event
+			if err := rows.Scan(&event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
 				return err
 			}
-			event, err := getEvent(eventID, -1)
+			err = getEventAlreadyHavingEvent(&event, -1)
 			if err != nil {
 				return err
 			}
 			for k := range event.Sheets {
 				event.Sheets[k].Detail = nil
 			}
-			recentEvents = append(recentEvents, event)
+			recentEvents = append(recentEvents, &event)
 		}
 		if recentEvents == nil {
 			recentEvents = make([]*Event, 0)
