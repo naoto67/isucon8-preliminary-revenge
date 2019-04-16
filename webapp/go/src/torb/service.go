@@ -216,14 +216,18 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		if err = rows.Scan(&rank, &count); err != nil {
 			return nil, err
 		}
-		sheet, i := getSheetsInfo(rank, "1")
-		if i < 0 {
-			return nil, errors.New("error")
-		}
-		event.Sheets[rank].Price = sheet.Price + event.Price
-		event.Sheets[rank].Total = sheet.Total
 		event.Sheets[rank].Remains = count
 		reserved_total = reserved_total + count
+	}
+
+	arr := []string{"S", "A", "B", "C"}
+	for _, v := range arr {
+		sheet, i := getSheetsInfo(v, "1")
+		if i < 0 {
+			return nil, errors.New("non range")
+		}
+		event.Sheets[v].Price = sheet.Price + event.Price
+		event.Sheets[v].Total = sheet.Total
 	}
 	event.Remains = 1000 - reserved_total
 
