@@ -296,3 +296,46 @@ func getIdByRankAndNum(rank string, id string) int {
 	}
 	return -1
 }
+
+func getSheetsInfo(rank, num_s string) (Sheet, int) {
+	num, err := strconv.Atoi(num_s)
+	var sheet Sheet
+	if err != nil {
+		return sheet, -1
+	}
+	switch rank {
+	case "S":
+		if 0 < num && num <= 50 {
+			sheet.ID = num
+			sheet.Rank = "S"
+			sheet.Price = 5000
+			sheet.num = num
+			return sheet, 1
+		}
+	case "A":
+		if 0 < num && num <= 150 {
+			sheet.ID = num + 50
+			sheet.Rank = "A"
+			sheet.Price = 3000
+			sheet.num = num
+			return sheet, 1
+		}
+	case "B":
+		if 0 < num && num <= 300 {
+			sheet.ID = num + 200
+			sheet.Rank = "B"
+			sheet.Price = 1000
+			sheet.num = num
+			return sheet, 1
+		}
+	case "C":
+		if 0 < num && num <= 500 {
+			sheet.ID = num + 500
+			sheet.Rank = "C"
+			sheet.Price = 0
+			sheet.num = num
+			return sheet, 1
+		}
+	}
+	return sheet, -1
+}
