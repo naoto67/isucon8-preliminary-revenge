@@ -136,14 +136,14 @@ func getEvents(all bool) ([]*Event, error) {
 		events = append(events, &event)
 	}
 	for i, v := range events {
-		event, err := getEvent(v.ID, -1)
+		err = getEventAlreadyHavingEvent(v, -1)
 		if err != nil {
 			return nil, err
 		}
-		for k := range event.Sheets {
-			event.Sheets[k].Detail = nil
+		for k := range v.Sheets {
+			v.Sheets[k].Detail = nil
 		}
-		events[i] = event
+		events[i] = v
 	}
 	return events, nil
 }
