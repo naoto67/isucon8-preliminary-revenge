@@ -294,14 +294,14 @@ func fillinAdministrator(next echo.HandlerFunc) echo.HandlerFunc {
 }
 
 func validateRank(rank string) bool {
-	//var count int
-	if rank == "A" || rank == "B" || rank == "C" || rank == "S" {
-		return true
-	} else {
-		return false
-	}
-	//	db.QueryRow("SELECT COUNT(*) FROM sheets WHERE `rank` = ?", rank).Scan(&count)
-	//	return count > 0
+	var count int
+	//if rank == "A" || rank == "B" || rank == "C" || rank == "S" {
+	//	return true
+	//} else {
+	//	return false
+	//}
+	db.QueryRow("SELECT COUNT(*) FROM sheets WHERE `rank` = ?", rank).Scan(&count)
+	return count > 0
 }
 
 type Renderer struct {
@@ -420,7 +420,7 @@ func main() {
 			return resError(c, "forbidden", 403)
 		}
 
-		// rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
+		// 	rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
 		rows, err := db.Query("SELECT r.*, s.rank AS sheet_rank, s.num AS sheet_num FROM reservations r INNER JOIN sheets s ON s.id = r.sheet_id WHERE r.user_id = ? ORDER BY IFNULL(r.canceled_at, r.reserved_at) DESC LIMIT 5", user.ID)
 		if err != nil {
 			return err
@@ -996,4 +996,5 @@ func getIdByRankAndNum(rank string, id string) int {
 		}
 	}
 	return -1
+
 }
