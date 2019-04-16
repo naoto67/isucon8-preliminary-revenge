@@ -42,3 +42,7 @@ CREATE TABLE IF NOT EXISTS administrators (
 
 alter table reservations add index index_on_reserved_at_canceled_at(canceled_at, reserved_at);
 alter table reservations add index index_on_user_id(user_id);
+alter table users add index index_on_nickname(nickname);
+alter table events add index index_on_title(title);
+alter table events add index index_on_public_fg(public_fg);
+alter table events add index index_on_closed_fg(closed_fg);
