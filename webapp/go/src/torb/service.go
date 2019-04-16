@@ -228,6 +228,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		}
 		event.Sheets[v].Price = sheet.Price + event.Price
 		event.Sheets[v].Total = sheet.Total
+		event.Sheets[v].Remains = sheet.Total - reserved_total
 	}
 	event.Remains = 1000 - reserved_total
 
