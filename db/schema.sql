@@ -46,3 +46,6 @@ alter table users add index index_on_nickname(nickname);
 alter table events add index index_on_title(title);
 alter table events add index index_on_public_fg(public_fg);
 alter table events add index index_on_closed_fg(closed_fg);
+alter table reservations add index index_on_reserved_at(reserved_at);
+alter table reservations add index index_on_event_id(event_id);
+alter table reservations add index index_on_sheet_id(sheet_id);
