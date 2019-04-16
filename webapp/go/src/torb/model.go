@@ -65,3 +65,9 @@ type Administrator struct {
 	LoginName string `json:"login_name,omitempty"`
 	PassHash  string `json:"pass_hash,omitempty"`
 }
+
+type TempStruct struct {
+	SheetID    int64
+	UserID     int64
+	ReservedAt *time.Time
+}

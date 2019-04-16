@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"strconv"
-	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -234,29 +233,26 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var reservedSheetIDs []int64
+
+	reservedSheets := map[int64]TempStruct{}
 	for rows.Next() {
-		var sheet Sheet
-		var sheetID int64
-		var userID int64
-		var reservedAt *time.Time
-		rows.Scan(&sheetID, &userID, &reservedAt)
-		sheet, i := getSheetByID(sheetID)
-		if i < 0 {
-			return nil, errors.New("error")
-		}
-		reservedSheetIDs = append(reservedSheetIDs, sheet.ID)
-		if userID == loginUserID {
-			sheet.Mine = true
-		}
-		sheet.ReservedAt = reservedAt
-		sheet.Reserved = true
-		event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
+		var temp TempStruct
+		rows.Scan(&temp.SheetID, &temp.UserID, &temp.ReservedAt)
+		reservedSheets[temp.SheetID] = temp
 	}
 	var i int64
 	for i = 1; i <= 1000; i++ {
-		if contains(reservedSheetIDs, i) {
-			continue
+		if _, ok := reservedSheets[i]; ok {
+			sheet, e := getSheetByID(i)
+			if e < 0 {
+				return nil, errors.New("non range")
+			}
+			if reservedSheets[i].UserID == loginUserID {
+				sheet.Mine = true
+			}
+			sheet.ReservedAt = reservedSheets[i].ReservedAt
+			sheet.Reserved = true
+			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 		} else {
 			sheet, e := getSheetByID(i)
 			if e < 0 {
@@ -408,13 +404,4 @@ func getSheetByID(id int64) (Sheet, int8) {
 		return sheet, 1
 	}
 	return sheet, -1
-}
-
-func contains(ids []int64, target int64) bool {
-	for _, v := range ids {
-		if v == target {
-			return true
-		}
-	}
-	return false
 }
