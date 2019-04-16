@@ -170,6 +170,7 @@ func getEventAlreadyHavingEvent(event *Event, loginUserID int64) error {
 			return err
 		}
 		event.Sheets[rank].Remains = count
+		reserved_total = reserved_total + count
 	}
 
 	arr := []string{"S", "A", "B", "C"}
@@ -250,6 +251,7 @@ func getEvent(eventID, loginUserID int64) (*Event, error) {
 			return nil, err
 		}
 		event.Sheets[rank].Remains = count
+		reserved_total = reserved_total + count
 	}
 
 	arr := []string{"S", "A", "B", "C"}
