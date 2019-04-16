@@ -151,10 +151,10 @@ func main() {
 			var reservation Reservation
 			var event Event
 			var sheet Sheet
-			if err := rows.Scan(&reservation.ID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt, &sheet.Rank, &sheet.Num, &event.ID, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
+			if err := rows.Scan(&reservation.ID, &reservation.EventID, &reservation.SheetID, &reservation.UserID, &reservation.ReservedAt, &reservation.CanceledAt, &sheet.Rank, &sheet.Num, &event.Title, &event.PublicFg, &event.ClosedFg, &event.Price); err != nil {
 				return err
 			}
-			reservation.EventID = event.ID
+			event.ID = reservation.EventID
 
 			err = getEventAlreadyHavingEvent(&event, -1)
 			if err != nil {
