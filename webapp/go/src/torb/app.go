@@ -342,7 +342,9 @@ func main() {
 		}
 		defer rows.Close()
 		for rows.Next() {
-			rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
+			if err = rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price); err != nil {
+				return err
+			}
 			tx, err := db.Begin()
 			if err != nil {
 				return err
