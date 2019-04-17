@@ -216,7 +216,6 @@ func getEventAlreadyHavingEvent(event *Event, loginUserID int64) error {
 			if e < 0 {
 				return errors.New("non range")
 			}
-			sheet.Reserved = false
 			event.Sheets[sheet.Rank].Detail = append(event.Sheets[sheet.Rank].Detail, &sheet)
 		}
 	}
