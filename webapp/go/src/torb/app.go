@@ -340,6 +340,7 @@ func main() {
 			}
 			return err
 		}
+		defer rows.Close()
 		for rows.Next() {
 			rows.Scan(&sheet.ID, &sheet.Rank, &sheet.Num, &sheet.Price)
 			tx, err := db.Begin()
